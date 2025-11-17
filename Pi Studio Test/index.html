@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html lang="vi">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Pi App Hello World</title>
+    <script src="https://sdk.pi.app/v2/pi-sdk.js"></script>
+
+    <style>
+      body {
+        font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+        text-align: center;
+        padding: 20px;
+        background-color: #f5f5f5;
+        color: #333;
+      }
+      .container {
+        background: white;
+        max-width: 400px;
+        margin: 0 auto;
+        padding: 30px;
+        border-radius: 12px;
+        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+      }
+      h1 {
+        color: #8a3ab9;
+        margin-bottom: 10px;
+      }
+      button {
+        background-color: #8a3ab9;
+        color: white;
+        border: none;
+        padding: 12px 24px;
+        font-size: 16px;
+        border-radius: 8px;
+        cursor: pointer;
+        margin-top: 20px;
+        width: 100%;
+      }
+      button:active {
+        background-color: #6d2c91;
+      }
+      #status-box {
+        margin-top: 20px;
+        padding: 10px;
+        background: #eef;
+        border-radius: 8px;
+        text-align: left;
+        font-family: monospace;
+        min-height: 100px;
+        word-break: break-all;
+        font-size: 13px;
+      }
+      .success {
+        color: green;
+        font-weight: bold;
+      }
+      .error {
+        color: red;
+        font-weight: bold;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <h1>Xin chào Pi Network!</h1>
+      <p>Đây là ứng dụng mẫu chạy trên Netlify.</p>
+
+      <button id="btn-login" onclick="loginPi()">Đăng nhập bằng Pi</button>
+
+      <h3>Nhật ký hoạt động (Logs):</h3>
+      <div id="status-box">Đang chờ thao tác...</div>
+    </div>
+
+    <script>
+      // ---------------------------------------------------------
+      // CẤU HÌNH CỦA BẠN (SỬA Ở ĐÂY)
+      // Hãy dán App UID bạn lấy từ Pi App Studio vào dòng dưới
+      const MY_APP_UID = "test-39e41d3e7decb6b7";
+      // ---------------------------------------------------------
+
+      const statusBox = document.getElementById("status-box");
+
+      // Hàm tiện ích để ghi log ra màn hình
+      function log(message, type = "normal") {
+        const time = new Date().toLocaleTimeString();
+        let color =
+          type === "error" ? "red" : type === "success" ? "green" : "#333";
+        statusBox.innerHTML =
+          `<div style="color:${color}">[${time}] ${message}</div>` +
+          statusBox.innerHTML;
+      }
+
+      // 1. Khởi tạo SDK ngay khi tải trang
+      try {
+        log("Đang khởi tạo Pi SDK...");
+
+        Pi.init({
+          version: "2.0",
+          app: MY_APP_UID,
+          sandbox: true, // Đặt true để test trên Sandbox, đặt false khi chạy Mainnet
+        });
+
+        log("Pi SDK đã sẵn sàng!", "success");
+      } catch (err) {
+        log("Lỗi khởi tạo SDK: " + err.message, "error");
+      }
+
+      // 2. Hàm xử lý đăng nhập
+      async function loginPi() {
+        log("Đang yêu cầu xác thực...");
+
+        try {
+          // Xác định các quyền cần xin
+          const scopes = ["username", "payments"];
+
+          // Callback xử lý thanh toán chưa hoàn tất (bắt buộc phải có nhưng có thể để trống lúc test)
+          const onIncompletePaymentFound = (payment) => {
+            log("Tìm thấy thanh toán chưa hoàn tất", "error");
+          };
+
+          // Gọi xác thực
+          const authResult = await Pi.authenticate(
+            scopes,
+            onIncompletePaymentFound
+          );
+
+          // Nếu thành công
+          log(`Đăng nhập thành công!`, "success");
+          log(`Xin chào: <b>${authResult.user.username}</b>`, "success");
+          log(`UID người dùng: ${authResult.user.uid}`);
+
+          // Ẩn nút đăng nhập
+          document.getElementById("btn-login").innerText = "Đã đăng nhập";
+          document.getElementById("btn-login").disabled = true;
+        } catch (error) {
+          // Nếu thất bại
+          log("Lỗi xác thực: " + JSON.stringify(error), "error");
+          console.error(error);
+        }
+      }
+    </script>
+  </body>
+</html>
